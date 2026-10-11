@@ -50,15 +50,33 @@ Although these improvements were relatively small, they suggest that the enginee
 
 ## Modeling: three implementations, one model
 
-*Which model (linear or logistic regression) and why. A results table
-comparing scikit-learn, the manual PyTorch loop, and the standard
-torch.nn.Module/torch.optim workflow, on the same test set, against the
-naive baseline. Do the three agree? If not, why not?*
+I used logistic regression because my target variable is binary: whether a customer subscribes to a term deposit or not.
+
+I implemented the same model in three ways: scikit-learn, manual PyTorch using autograd and manual gradient updates, and standard PyTorch using `nn.Module` and `torch.optim.SGD`.
+
+All three models used the same preprocessing and data splits. On the validation set, they achieved similar performance, with 90.29% accuracy. Scikit-learn achieved higher recall and F1-score, while the PyTorch models had higher precision and ROC-AUC.
+
+The two PyTorch implementations produced almost identical results, suggesting that my manual gradient updates were working correctly. The differences from scikit-learn could be explained by different optimization methods, initialization, and convergence.
+
+Accuracy alone was misleading because the naive baseline already achieved approximately 89% accuracy without identifying any subscribers. This is why I also compared precision, recall, F1-score, and ROC-AUC.
+
+I selected **scikit-learn logistic regression** for the final business evaluation because it achieved the highest F1-score (0.3617) and recall (25%) on the validation set at the initial threshold of 0.50. Although the two PyTorch implementations had higher precision (75%) and slightly higher ROC-AUC (around 0.81), their lower recall (17.65%) meant they identified fewer actual subscribers. Since the bank's goal is to identify potential customers to contact, I considered recall particularly important. Scikit-learn also provided a straightforward way to generate subscription probabilities using `predict_proba()`.
+
+However, the default threshold of 0.50 was too conservative for the bank's marketing objective, as it missed 75% of actual subscribers on the validation set. I therefore tested thresholds between 0.10 and 0.90. The threshold of **0.20 maximized F1-score (0.5211)**, balancing precision (50%) and recall (54.41%). However, F1-score does not account for the financial consequences of calling customers.
+
+To make the decision more business-oriented, I introduced hypothetical assumptions of **€5 per call and €50 per successful subscription**. Under these assumptions, the threshold of **0.10 generated the highest estimated net value (€1,595)** on the validation set, compared with €310 from calling everyone and €0 from calling nobody. At this threshold, the model identified 45 of the 68 actual subscribers while recommending calls to only 131 of 618 customers.
+
+Therefore, I selected **scikit-learn with a threshold of 0.10** as my final approach, prioritizing estimated business value over maximizing accuracy or F1-score alone. However, these financial estimates are based on hypothetical assumptions and observed subscriptions, so they do not establish whether the calls actually caused customers to subscribe.
 
 ## Limitations & next steps
 
-*Real limitations you found, and concretely how you'd address each one with
-more time or data — not generic hedging.*
+**1. Class imbalance:** Only 10.95% of customers subscribed, making accuracy misleading. Although adjusting the threshold improved recall, the final model still missed 30 of the 67 actual subscribers in the test set. With more time, I would investigate class weighting and compare precision-recall performance.
+
+**2. Dataset size and time information:** I used the smaller dataset with 4,119 observations. It lacks complete dates, preventing a reliable chronological split. With access to the full campaign data and timestamps, I would evaluate how well the model predicts subscriptions in future campaigns.
+
+**3. Feature engineering:** The engineered features improved F1-score from 0.3261 to 0.3617 on the validation set, but the improvement was relatively small. I tested them together, so I cannot identify which features contributed most. Next, I would test each engineered feature separately.
+
+**4. Business assumptions:** The €5 cost per call and €50 value per subscription are hypothetical. The model also cannot determine whether a customer subscribed because of the call. With real campaign costs and randomized contact data, I would evaluate incremental profitability and test whether targeting customers actually generates additional subscriptions.
 
 ## Generative AI use disclosure
 
