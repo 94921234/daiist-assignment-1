@@ -80,4 +80,4 @@ Therefore, I selected **scikit-learn with a threshold of 0.10** as my final appr
 
 ## Generative AI use disclosure
 
-*Per the syllabus AI Policy: what you used and how, or "no AI content used."*
+I used ChatGPT to help structure the project, understand machine learning concepts, and develop and debug Python code for preprocessing, feature engineering, model training, evaluation, and the Gradio dashboard.
